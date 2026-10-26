@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FocusFlow — Pomodoro & Tareas</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    .dashboard {
+      max-width: 860px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 720px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      font-weight: 500;
+    }
+
+    /* Pomodoro Timer */
+    .modes {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 0.35rem;
+      border-radius: 10px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 0.45rem;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .timer-display {
+      font-size: 4rem;
+      font-weight: 700;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -2px;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .timer-controls {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 0.65rem 1.25rem;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Tasks */
+    .task-form {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .task-input {
+      flex: 1;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.65rem 0.9rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .task-input:focus {
+      border-color: var(--primary);
+    }
+
+    .task-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 0.85rem;
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: all 0.15s;
+    }
+
+    .task-item.completed span {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .task-left {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 6px;
+    }
+
+    .delete-btn:hover {
+      color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .stats-bar {
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="dashboard">
+    <!-- Panel Pomodoro -->
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">⏱️ Temporizador Focus</h2>
+        <span class="badge" id="session-counter">0 sesiones</span>
+      </div>
+
+      <div class="modes">
+        <button class="mode-btn active" onclick="setMode('focus', 25)">Enfoque (25m)</button>
+        <button class="mode-btn" onclick="setMode('short', 5)">Pausa (5m)</button>
+        <button class="mode-btn" onclick="setMode('long', 15)">Larga (15m)</button>
+      </div>
+
+      <div class="timer-display" id="timer">25:00</div>
+
+      <div class="timer-controls">
+        <button class="btn btn-primary" id="toggle-btn" onclick="toggleTimer()">Iniciar</button>
+        <button class="btn btn-outline" onclick="resetTimer()">Reiniciar</button>
+      </div>
+    </section>
+
+    <!-- Panel Tareas -->
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">✅ Tareas del Día</h2>
+        <span class="badge" id="task-counter">0/0 completadas</span>
+      </div>
+
+      <form class="task-form" onsubmit="addTask(event)">
+        <input
+          type="text"
+          id="task-input"
+          class="task-input"
+          placeholder="Añadir nueva tarea (ej. Probar Antigravity)..."
+          required
+        />
+        <button type="submit" class="btn btn-primary">+</button>
+      </form>
+
+      <ul class="task-list" id="task-list"></ul>
+
+      <div class="stats-bar">
+        <span id="status-msg">Listo para enfocarte</span>
+        <button class="delete-btn" onclick="clearCompleted()">Limpiar completadas</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY_TASKS = 'focusflow_tasks_v1';
+    const STORAGE_KEY_SESSIONS = 'focusflow_sessions_v1';
+
+    // Estado del Pomodoro
+    let duration = 25 * 60;
+    let timeLeft = duration;
+    let timerId = null;
+    let sessions = Number(localStorage.getItem(STORAGE_KEY_SESSIONS)) || 0;
+
+    // Estado de Tareas (cargadas desde localStorage)
+    const defaultTasks = [
+      { id: 1, text: "Explorar cómo Antigravity crea archivos", done: true },
+      { id: 2, text: "Probar el temporizador Pomodoro", done: false },
+      { id: 3, text: "Publicar la app gratis en la nube", done: false }
+    ];
+    let tasks = JSON.parse(localStorage.getItem(STORAGE_KEY_TASKS) || 'null') || defaultTasks;
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(tasks));
+      localStorage.setItem(STORAGE_KEY_SESSIONS, String(sessions));
+    }
+
+    function playFinishSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.18); // A5
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.6);
+      } catch (_) {}
+    }
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function updateTimerDisplay() {
+      document.getElementById('timer').textContent = formatTime(timeLeft);
+      document.getElementById('session-counter').textContent = `${sessions} sesiones`;
+    }
+
+    function setMode(mode, minutes) {
+      clearInterval(timerId);
+      timerId = null;
+      duration = minutes * 60;
+      timeLeft = duration;
+      document.getElementById('toggle-btn').textContent = 'Iniciar';
+      document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      updateTimerDisplay();
+    }
+
+    function toggleTimer() {
+      const btn = document.getElementById('toggle-btn');
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+        btn.textContent = 'Reanudar';
+        document.getElementById('status-msg').textContent = 'Temporizador en pausa';
+      } else {
+        btn.textContent = 'Pausar';
+        document.getElementById('status-msg').textContent = '🔥 En sesión de enfoque...';
+        timerId = setInterval(() => {
+          if (timeLeft > 0) {
+            timeLeft--;
+            updateTimerDisplay();
+          } else {
+            clearInterval(timerId);
+            timerId = null;
+            sessions++;
+            saveState();
+            updateTimerDisplay();
+            playFinishSound();
+            btn.textContent = 'Iniciar';
+            document.getElementById('status-msg').textContent = '🎉 ¡Sesión completada!';
+          }
+        }, 1000);
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(timerId);
+      timerId = null;
+      timeLeft = duration;
+      document.getElementById('toggle-btn').textContent = 'Iniciar';
+      document.getElementById('status-msg').textContent = 'Temporizador reiniciado';
+      updateTimerDisplay();
+    }
+
+    function renderTasks() {
+      const list = document.getElementById('task-list');
+      list.innerHTML = '';
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.className = `task-item ${task.done ? 'completed' : ''}`;
+        li.innerHTML = `
+          <div class="task-left" onclick="toggleTask(${task.id})">
+            <input type="checkbox" ${task.done ? 'checked' : ''} />
+            <span>${task.text}</span>
+          </div>
+          <button class="delete-btn" onclick="deleteTask(${task.id})" title="Eliminar">✕</button>
+        `;
+        list.appendChild(li);
+      });
+      const doneCount = tasks.filter(t => t.done).length;
+      document.getElementById('task-counter').textContent = `${doneCount}/${tasks.length} completadas`;
+    }
+
+    function addTask(e) {
+      e.preventDefault();
+      const input = document.getElementById('task-input');
+      const text = input.value.trim();
+      if (!text) return;
+      tasks.push({ id: Date.now(), text, done: false });
+      input.value = '';
+      saveState();
+      renderTasks();
+    }
+
+    function toggleTask(id) {
+      tasks = tasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
+      saveState();
+      renderTasks();
+    }
+
+    function deleteTask(id) {
+      tasks = tasks.filter(t => t.id !== id);
+      saveState();
+      renderTasks();
+    }
+
+    function clearCompleted() {
+      tasks = tasks.filter(t => !t.done);
+      saveState();
+      renderTasks();
+    }
+
+    updateTimerDisplay();
+    renderTasks();
+  </script>
+</body>
+</html>
